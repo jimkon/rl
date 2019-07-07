@@ -1,6 +1,5 @@
-
 from rl.core import *
 
 import rl.utils
-import rl.q_learning
+import rl.agents
 import rl.nets

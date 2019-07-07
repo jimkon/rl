@@ -1,3 +1,5 @@
+import numpy as np
+
 from rl import *
 from rl.utils import epsilon
 

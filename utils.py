@@ -1,7 +1,5 @@
 import numpy as np
 
-import rl
-
 # by LazyProgrammer
 def running_average(arr, frame=-1):
 
