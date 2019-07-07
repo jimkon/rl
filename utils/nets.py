@@ -1,7 +1,6 @@
 import numpy as np
 import tensorflow as tf
 
-import rl
 
 class RBF_net:
     def __init__(self, samplers=None, constant_samplers=False):

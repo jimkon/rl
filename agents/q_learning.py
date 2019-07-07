@@ -40,7 +40,7 @@ class QLearningAgent(Agent):
         pass
 
 
-class QLearningTabularAgent(QLearningAgent):
+class TabularQLearningAgent(QLearningAgent):
 
     def __init__(self, state_low, state_high, actions_num, bins_per_dim=10, epsilon_factor=1):
 
@@ -87,3 +87,7 @@ class QLearningTabularAgent(QLearningAgent):
         if a is None:
             return s_ind[0], s_ind[1], s_ind[2], s_ind[3]
         return s_ind[0], s_ind[1], s_ind[2], s_ind[3], int(a)
+
+
+class RBFQLearningAgent(QLearningAgent):
+    pass
