@@ -1,7 +1,7 @@
 import numpy as np
 
 from rl import *
-from rl.utils import epsilon
+from rl.utils import epsilon, RBF_net
 
 
 class QLearningAgent(Agent):
@@ -90,4 +90,22 @@ class TabularQLearningAgent(QLearningAgent):
 
 
 class RBFQLearningAgent(QLearningAgent):
-    pass
+
+    def __init__(self, state_dims, actions_num, samplers=None, constant_samplers=False):
+        self.state_dims = state_dims
+        self.actions_num = actions_num
+        self.nets = [RBF_net(samplers=samplers, constant_samplers=constant_samplers) for i in range(actions_num)]
+        for net in self.nets:
+            net.create_net(state_dims, 1)
+
+    def act(self, state):
+        return super().act(state)
+
+    def Q(self, state, action=None):
+        if action is None:
+            return np.array([self.nets[int(a)].predict(state) for a in range(self.actions_num)])
+        return self.nets[int(action)].predict(state)
+
+    def Q_update(self, s, a, q_value):
+        self.nets[int(a)].partial_fit(s, np.array(q_value))
+
