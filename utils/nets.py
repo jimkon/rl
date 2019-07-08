@@ -3,10 +3,11 @@ import tensorflow as tf
 
 
 class RBF_net:
-    def __init__(self, samplers=None, constant_samplers=False):
+    def __init__(self, samplers=None, constant_samplers=True, constant_gammas=True):
         self.samplers = samplers
         self.samplers_num = -1
         self.constant_samplers = constant_samplers
+        self.constant_gammas = constant_gammas
         self.initialized = False
 
     def create_net(self, X_shape, y_shape):
@@ -46,8 +47,13 @@ class RBF_net:
             self.centers = tf.constant(self.samplers)
         else:
             self.centers = tf.Variable(self.samplers)
-        self.gammas = tf.Variable(np.random.random((self.samplers_num)))
-        self.weights = tf.Variable(np.random.random((self.samplers_num, self.output_dimensions)))
+
+        if self.constant_gammas:
+            self.gammas = tf.constant(np.random.random((self.samplers_num))*5)
+        else:
+            self.gammas = tf.Variable(np.random.random((self.samplers_num))*5)
+
+        self.weights = tf.Variable(np.random.random((self.samplers_num, self.output_dimensions))*(1/self.samplers_num))
 
         # placeholders
         self.x = tf.compat.v1.placeholder(tf.float64, (self.input_dimensions))
@@ -68,6 +74,8 @@ class RBF_net:
         self.sess = tf.compat.v1.Session()
         self.sess.run(self.init_op)
 
+        self.initialized = True
+
     def predict(self, X):
         return self.sess.run(self.output, feed_dict={
                 self.x: X
@@ -76,7 +84,6 @@ class RBF_net:
     def partial_fit(self, X, y):
         if not self.initialized:
             self.create_net(X.shape[0], y.shape[0])
-            self.initialized = True
 
         self.sess.run(self.train, feed_dict={
                 self.x: X,
