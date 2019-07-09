@@ -49,11 +49,12 @@ class RBFNet:
             self.centers = tf.Variable(self.samplers)
 
         if self.constant_gammas:
-            self.gammas = tf.constant(np.random.random((self.samplers_num))*5)
+            self.gammas = tf.constant(np.random.random((self.samplers_num)) * 5)
         else:
-            self.gammas = tf.Variable(np.random.random((self.samplers_num))*5)
+            self.gammas = tf.Variable(np.random.random((self.samplers_num)) * 5)
 
-        self.weights = tf.Variable(np.random.random((self.samplers_num, self.output_dimensions))*(1/self.samplers_num))
+        self.weights = tf.Variable(
+            np.random.random((self.samplers_num, self.output_dimensions)) * (1 / self.samplers_num))
 
         # placeholders
         self.x = tf.compat.v1.placeholder(tf.float64, (self.input_dimensions))
@@ -98,18 +99,18 @@ class RBFNet:
         return centers, gammas, weights
 
 
-def nn_layer(x, size, activation=tf.nn.relu, drop_out=True, return_vars=True):
+def nn_layer(x, size, activation=tf.nn.relu, drop_out=True, drop_out_rate=0.3, return_vars=True):
     # x*W+b
     if drop_out:
-        x = tf.nn.dropout(x)
+        x = tf.nn.dropout(x, rate=drop_out_rate)
 
-    W = tf.Variable(np.random.random((x.shape[1], size))*(1./(int(x.shape[1]) * size)))
-    b = tf.Variable(np.random.random((1, size))*(1./size))
+    W = tf.Variable(np.random.random((x.shape[1], size)) * (1. / (int(x.shape[1]) * size)))
+    b = tf.Variable(np.random.random((1, size)) * (1. / size))
 
     if activation is None:
         y = tf.matmul(x, W) + b
     else:
-        y = activation(tf.matmul(x, W)+b)
+        y = activation(tf.matmul(x, W) + b)
 
     if return_vars:
         return y, W, b
@@ -119,7 +120,8 @@ def nn_layer(x, size, activation=tf.nn.relu, drop_out=True, return_vars=True):
 
 class FullyConnectedDNN:
 
-    def __init__(self, input_dims, output_dims, hidden_layers=[200, 100], activations=[tf.nn.relu, tf.nn.relu], lr=1e-2, drop_out=True):
+    def __init__(self, input_dims, output_dims, hidden_layers=[200, 100], activations=[tf.nn.relu, tf.nn.relu],
+                 drop_out=True, drop_out_rate=.3, lr=1e-2):
         self.input_dims = input_dims
         self.output_dims = output_dims
 
@@ -133,7 +135,8 @@ class FullyConnectedDNN:
         self.x = tf.compat.v1.placeholder(tf.float64, shape=(None, input_dims))
         x = self.x
         for i, layer in enumerate(layers):
-            y, W, b = nn_layer(x, layer, activations[i], drop_out=(drop_out and i>0), return_vars=True)
+            y, W, b = nn_layer(x, layer, activations[i], drop_out=(drop_out and i > 0), drop_out_rate=drop_out_rate,
+                               return_vars=True)
 
             self.ys.append(y)
             self.Ws.append(W)
@@ -156,7 +159,7 @@ class FullyConnectedDNN:
         self.sess.run(self.init_op)
 
     def predict(self, X):
-        if len(X.shape)==1:
+        if len(X.shape) == 1:
             X = np.reshape(X, (-1, self.input_dims))
 
         result = self.sess.run(self.y, feed_dict={
@@ -167,10 +170,9 @@ class FullyConnectedDNN:
 
     def fit(self, X, y):
         self.sess.run(self.train, feed_dict={
-                self.x: X,
+                self.x : X,
                 self.y_: y
         })
 
     def partial_fit(self, X, y):
         self.fit(np.array([X]), np.array([y]))
-

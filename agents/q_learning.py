@@ -95,13 +95,14 @@ class TabularQLearningAgent(QLearningAgent):
 
 class RBFQLearningAgent(QLearningAgent):
 
-    def __init__(self, state_dims, actions_num, samplers=None, constant_samplers=False, constant_gammas=True, epsilon_factor=1):
+    def __init__(self, state_dims, actions_num, samplers=None, constant_samplers=False, constant_gammas=True,
+                 epsilon_factor=1):
         super().__init__(state_dims=state_dims, actions_num=actions_num, epsilon_factor=epsilon_factor)
-        self.nets = [RBFNet(samplers=samplers, constant_samplers=constant_samplers, constant_gammas=constant_gammas) for _ in range(self.actions_num)]
+        self.nets = [RBFNet(samplers=samplers, constant_samplers=constant_samplers, constant_gammas=constant_gammas) for
+                     _ in range(self.actions_num)]
 
         for net in self.nets:
-            net.create_net(state_dims, 1)
-            # net.partial_fit(np.zeros(self.state_dims), np.array(0))
+            net.create_net(state_dims, 1)  # net.partial_fit(np.zeros(self.state_dims), np.array(0))
 
     def Q(self, state, action=None):
         if action is None:
@@ -115,10 +116,14 @@ class RBFQLearningAgent(QLearningAgent):
 
 class NNQLearningAgent(QLearningAgent):
 
-    def __init__(self, state_dims, actions_num, hidden_layers=[200, 100], activations=[tf.nn.relu, tf.nn.relu], drop_out=True, lr=1e-2, epsilon_factor=1):
+    def __init__(self, state_dims, actions_num, hidden_layers=[200, 100], activations=[tf.nn.relu, tf.nn.relu],
+                 drop_out=True, drop_out_rate=.3, lr=1e-2, epsilon_factor=1):
+
         super().__init__(state_dims=state_dims, actions_num=actions_num, epsilon_factor=epsilon_factor)
-        self.nets = [FullyConnectedDNN(state_dims, 1, hidden_layers=hidden_layers, activations=activations, drop_out=drop_out, lr=lr) for
-                     _ in range(self.actions_num)]
+
+        self.nets = [FullyConnectedDNN(state_dims, 1, hidden_layers=hidden_layers, activations=activations,
+                                       drop_out=drop_out, drop_out_rate=drop_out_rate, lr=lr) for _ in
+                     range(self.actions_num)]
 
     def Q(self, state, action=None):
         if action is None:
