@@ -1,7 +1,7 @@
 import numpy as np
 
 from rl import *
-from rl.utils import epsilon, RBF_net
+from rl.utils import epsilon, RBFNet
 
 
 class QLearningAgent(Agent):
@@ -96,7 +96,7 @@ class RBFQLearningAgent(QLearningAgent):
 
     def __init__(self, state_dims, actions_num, samplers=None, constant_samplers=False, constant_gammas=True, epsilon_factor=1):
         super().__init__(state_dims=state_dims, actions_num=actions_num, epsilon_factor=epsilon_factor)
-        self.nets = [RBF_net(samplers=samplers, constant_samplers=constant_samplers, constant_gammas=constant_gammas) for _ in range(self.actions_num)]
+        self.nets = [RBFNet(samplers=samplers, constant_samplers=constant_samplers, constant_gammas=constant_gammas) for _ in range(self.actions_num)]
 
         for net in self.nets:
             net.create_net(state_dims, 1)
