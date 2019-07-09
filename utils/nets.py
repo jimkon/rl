@@ -98,8 +98,11 @@ class RBFNet:
         return centers, gammas, weights
 
 
-def nn_layer(x, size, activation=tf.nn.relu, return_vars=True):
+def nn_layer(x, size, activation=tf.nn.relu, drop_out=True, return_vars=True):
     # x*W+b
+    if drop_out:
+        x = tf.nn.dropout(x)
+
     W = tf.Variable(np.random.random((x.shape[1], size))*(1./(int(x.shape[1]) * size)))
     b = tf.Variable(np.random.random((1, size))*(1./size))
 
@@ -114,9 +117,9 @@ def nn_layer(x, size, activation=tf.nn.relu, return_vars=True):
         return y
 
 
-class FullyConnectedNN:
+class FullyConnectedDNN:
 
-    def __init__(self, input_dims, output_dims, hidden_layers=[200, 100], activations=[tf.nn.relu, tf.nn.relu], lr=1e-2):
+    def __init__(self, input_dims, output_dims, hidden_layers=[200, 100], activations=[tf.nn.relu, tf.nn.relu], lr=1e-2, drop_out=True):
         self.input_dims = input_dims
         self.output_dims = output_dims
 
@@ -130,7 +133,7 @@ class FullyConnectedNN:
         self.x = tf.compat.v1.placeholder(tf.float64, shape=(None, input_dims))
         x = self.x
         for i, layer in enumerate(layers):
-            y, W, b = nn_layer(x, layer, activations[i], return_vars=True)
+            y, W, b = nn_layer(x, layer, activations[i], drop_out=(drop_out and i>0), return_vars=True)
 
             self.ys.append(y)
             self.Ws.append(W)
