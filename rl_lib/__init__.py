@@ -1,4 +1,2 @@
-from rl.core import *
+from rl_lib.core import *
 
-import rl.utils
-import rl.agents

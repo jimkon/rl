@@ -1,9 +1,9 @@
 import numpy as np
 
-from rl import *
+import rl_lib as rl
 
 
-class FeatureAgent(Agent):
+class FeatureAgent(rl.Agent):
 
     def __init__(self, features):
         self.features = np.array(features)
