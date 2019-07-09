@@ -1,5 +1,6 @@
 import numpy as np
 
+
 # by LazyProgrammer
 def running_average(arr, frame=-1):
 
@@ -14,6 +15,7 @@ def running_average(arr, frame=-1):
         running_avg[t] = arr[max(0, t - frame):(t + 1)].mean()
 
     return running_avg
+
 
 def epsilon(n):
     if n<0:

@@ -1,11 +1,9 @@
 import numpy as np
 import tensorflow as tf
 
-from rl import *
-from rl.utils import epsilon, RBFNet, FullyConnectedDNN
+import rl_lib as rl
 
-
-class QLearningAgent(Agent):
+class QLearningAgent(rl.Agent):
     """
     Q-Learning implementation
 
@@ -21,7 +19,7 @@ class QLearningAgent(Agent):
         pass
 
     def act(self, state):
-        if self.actions_num > 0 and np.random.random() < epsilon(self.episode * self.epsilon_factor):
+        if self.actions_num > 0 and np.random.random() < rl.utils.utils.epsilon(self.episode * self.epsilon_factor):
             return np.random.randint(self.actions_num)
         super().act(state)
         return np.argmax(self.Q(state))
@@ -98,7 +96,7 @@ class RBFQLearningAgent(QLearningAgent):
     def __init__(self, state_dims, actions_num, samplers=None, constant_samplers=False, constant_gammas=True,
                  epsilon_factor=1):
         super().__init__(state_dims=state_dims, actions_num=actions_num, epsilon_factor=epsilon_factor)
-        self.nets = [RBFNet(samplers=samplers, constant_samplers=constant_samplers, constant_gammas=constant_gammas) for
+        self.nets = [rl.utils.nets.RBFNet(samplers=samplers, constant_samplers=constant_samplers, constant_gammas=constant_gammas) for
                      _ in range(self.actions_num)]
 
         for net in self.nets:
@@ -121,7 +119,7 @@ class NNQLearningAgent(QLearningAgent):
 
         super().__init__(state_dims=state_dims, actions_num=actions_num, epsilon_factor=epsilon_factor)
 
-        self.nets = [FullyConnectedDNN(state_dims, 1, hidden_layers=hidden_layers, activations=activations,
+        self.nets = [rl.utils.nets.FullyConnectedDNN(state_dims, 1, hidden_layers=hidden_layers, activations=activations,
                                        drop_out=drop_out, drop_out_rate=drop_out_rate, lr=lr) for _ in
                      range(self.actions_num)]
 
