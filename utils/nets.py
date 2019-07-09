@@ -142,8 +142,8 @@ class FullyConnectedNN:
 
         self.y_ = tf.compat.v1.placeholder(tf.float64, shape=(None, output_dims))
 
-        # self.loss = tf.compat.v1.losses.mean_squared_error(self.y_, self.y)
-        self.loss = tf.reduce_mean(tf.squared_difference(self.y_, self.y))
+        self.loss = tf.compat.v1.losses.mean_squared_error(self.y_, self.y)
+        # self.loss = tf.reduce_mean(tf.squared_difference(self.y_, self.y))
 
         self.train = tf.compat.v1.train.AdamOptimizer(lr).minimize(self.loss)
 

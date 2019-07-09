@@ -1,7 +1,8 @@
 import numpy as np
+import tensorflow as tf
 
 from rl import *
-from rl.utils import epsilon, RBFNet
+from rl.utils import epsilon, RBFNet, FullyConnectedNN
 
 
 class QLearningAgent(Agent):
@@ -110,3 +111,19 @@ class RBFQLearningAgent(QLearningAgent):
     def Q_update(self, s, a, q_value):
         # print("update", s, a, q_value, self.Q(s, a))
         self.nets[int(a)].partial_fit(s, np.array(q_value))
+
+
+class NNQLearningAgent(QLearningAgent):
+
+    def __init__(self, state_dims, actions_num, hidden_layers=[200, 100], activations=[tf.nn.relu, tf.nn.relu], lr=1e-2, epsilon_factor=1):
+        super().__init__(state_dims=state_dims, actions_num=actions_num, epsilon_factor=epsilon_factor)
+        self.nets = [FullyConnectedNN(state_dims, 1, hidden_layers=hidden_layers, activations=activations, lr=lr) for
+                     _ in range(self.actions_num)]
+
+    def Q(self, state, action=None):
+        if action is None:
+            return np.array([self.nets[int(a)].predict(state)[0] for a in range(self.actions_num)])
+        return self.nets[int(action)].predict(state)[0]
+
+    def Q_update(self, s, a, q_value):
+        self.nets[int(a)].partial_fit(np.array(s), np.array(q_value))
