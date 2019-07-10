@@ -3,6 +3,7 @@ import tensorflow as tf
 
 import rl_lib as rl
 
+
 class QLearningAgent(rl.Agent):
     """
     Q-Learning implementation
@@ -19,7 +20,7 @@ class QLearningAgent(rl.Agent):
         pass
 
     def act(self, state):
-        if self.actions_num > 0 and np.random.random() < rl.utils.utils.epsilon(self.episode * self.epsilon_factor):
+        if self.actions_num > 0 and np.random.random() < rl.utils.epsilon(self.episode * self.epsilon_factor):
             return np.random.randint(self.actions_num)
         super().act(state)
         return np.argmax(self.Q(state))
@@ -87,8 +88,8 @@ class TabularQLearningAgent(QLearningAgent):
         s_ind = np.clip(raw_index.astype(np.int), [0] * self.state_dims, [self.bins_per_dim - 1] * self.state_dims)
 
         if a is None:
-            return s_ind[0], s_ind[1], s_ind[2], s_ind[3]
-        return s_ind[0], s_ind[1], s_ind[2], s_ind[3], int(a)
+            return tuple(s_ind)
+        return tuple(np.append(s_ind, int(a)))
 
 
 class RBFQLearningAgent(QLearningAgent):
