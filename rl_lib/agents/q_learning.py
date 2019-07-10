@@ -84,7 +84,7 @@ class TabularQLearningAgent(QLearningAgent):
 
     def Q_index(self, s, a=None):
         s = np.array(s)
-        raw_index = (self.q_table.shape[1:] * (s - self.s_low) / (self.s_high - self.s_low))
+        raw_index = (self.q_table.shape[:-1] * (s - self.s_low) / (self.s_high - self.s_low))
         s_ind = np.clip(raw_index.astype(np.int), [0] * self.state_dims, [self.bins_per_dim - 1] * self.state_dims)
 
         if a is None:
