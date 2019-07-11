@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 plt.style.use("bmh")
 
+from rl_lib.utils.utils import running_average
 
 class MountainCarRewardWrapper(gym.RewardWrapper):
 
@@ -104,9 +105,21 @@ def plot_state_path(df_ep, episode=0):
                 marker='v')
     plt.xlabel('pos')
     plt.ylabel('vel')
+    plt.title('States')
 
 def plot_reward(df_ep, episode=0):
     plt.plot(df_ep['reward'], label='total(ep={})={},'.format(episode, df_ep['reward'].sum()))
+    plt.xlabel('steps')
+    plt.ylabel('reward')
+
+def plot_policy(agent):
+    xys = uniform_state_grid()
+    actions = np.array([agent.act(xy) for xy in xys])
+    plot(xys, actions)
+    plt.xlabel('pos')
+    plt.ylabel('vel')
+    plt.title("Policy")
+
 
 def show_episode(df, episode=-1):
     if episode<0:
@@ -118,6 +131,48 @@ def show_episode(df, episode=-1):
     plt.subplot(1, 2, 2)
     plot_reward(df_ep, episode)
     plt.legend()
+    plt.show()
+
+def plot_rewards(df):
+    rewards = df.groupby(['episode']).agg({'reward':'sum'})
+
+    plt.plot(rewards)
+    plt.plot(running_average(rewards), label='running avg')
+    plt.xlabel('episode')
+    plt.ylabel('reward')
+    plt.title('rewards')
+
+def plot_state_usage(df):
+    x, y = df['state1'], df['state2']
+    plt.hist2d(x, y)
+    plt.colorbar()
+    plt.xlabel('pos')
+    plt.ylabel('vel')
+    plt.title("exploration")
+
+def plot_action_usage(df):
+    actions = df['action']
+    plt.hist(actions)
+    plt.colorbar()
+    plt.xlabel('actions')
+    plt.ylabel('%')
+    plt.title("usage")
+
+def show_progress(df, agent):
+    plt.figure(figsize=(15, 10))
+    plt.subplot(2, 2, 1)
+    plot_rewards(df)
+
+    plt.subplot(2, 2, 2)
+    plot_state_usage(df)
+
+    plt.subplot(2, 2, 3)
+    plot_policy(agent)
+
+    plt.subplot(2, 2, 4)
+    plot_action_usage(df)
+
+    plt.tight_layout()
     plt.show()
 
 ################### VARIABLES ###################
