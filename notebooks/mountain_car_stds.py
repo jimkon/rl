@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import gym
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -57,10 +58,12 @@ def plot_Q(qlearning_agent, a=None):
     plt.show()
 
 def run(agent, episodes=1000, verbose=True):
+    run_start_time = time.time()
     df = pd.DataFrame()
     states, actions, rewards, states_, dones = [], [], [], [], []
 
     for episode in range(episodes):
+        episode_start_time = time.time()
 
         state = env.reset()
         episode_reward = 0
@@ -86,9 +89,12 @@ def run(agent, episodes=1000, verbose=True):
             step_count+= 1
 
         if verbose:
-            print('Episode {} finished after {} steps with total reward {}'.format(episode,
+            time_took = 1e3*(time.time()-episode_start_time)
+            print('Episode {} finished after {} steps with total reward {:.1f} in  {:.1f} ms ({:.2f} per step)'.format(episode,
                                                                                    step_count,
-                                                                                   episode_reward))
+                                                                                   episode_reward,
+                                                                                   time_took,
+                                                                                   time_took/step_count))
 
     df = pd.concat([df, pd.DataFrame(np.array(states), columns=['state1', 'state2'])], axis=1)
     df = pd.concat([df, pd.DataFrame(np.array(actions), columns=['action'])], axis=1)
@@ -96,7 +102,8 @@ def run(agent, episodes=1000, verbose=True):
     df = pd.concat([df, pd.DataFrame(np.array(states_), columns=['state1_', 'state2_'])], axis=1)
     df = pd.concat([df, pd.DataFrame(np.array(dones), columns=['dones'])], axis=1)
     df['episode'] = df['dones'].cumsum()-df['dones'] # number of episode
-
+    run_time = (time.time()-run_start_time)
+    print("Run {} episodes in {:.02f} seconds".format(episodes, run_time))
     return df
 
 def plot_state_path(df_ep, episode=0):
@@ -159,6 +166,7 @@ def show_episode(df, episode=-1):
 
     df_ep = df[df['episode']==episode].reset_index()
 
+    plt.figure(figsize=(15, 5))
     plt.subplot(1, 2, 1)
     plot_state_path(df_ep, episode)
 
@@ -173,13 +181,13 @@ def show_progress(df, agent):
     plt.subplot(2, 2, 1)
     plot_rewards(df)
 
-    plt.subplot(2, 2, 2)
+    plt.subplot(2, 2, 3)
     plot_state_usage(df)
 
-    plt.subplot(2, 2, 3)
+    plt.subplot(2, 2, 4)
     plot_policy(agent)
 
-    plt.subplot(2, 2, 4)
+    plt.subplot(2, 2, 2)
     plot_action_usage(df)
 
     plt.tight_layout()
