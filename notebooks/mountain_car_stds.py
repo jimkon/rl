@@ -3,6 +3,7 @@ import gym
 import pandas as pd
 import matplotlib.pyplot as plt
 plt.style.use("bmh")
+from matplotlib.colors import LogNorm
 
 from rl_lib.utils.utils import running_average
 
@@ -25,9 +26,9 @@ class MountainCarRewardWrapper(gym.RewardWrapper):
         return self.state, self.reward(reward), done, info
 
     def reward(self, reward):
-        won = self.state[1]>.5
+        won = self.state[0]>.5
         res = np.linalg.norm((self.state-self.center)/self.normalize_scaler)
-        res += 100 if won else .0
+        res += -1.4142# + (1 if won else .0)
         return res
 
 def uniform_state_grid(points_per_axis=100):
@@ -106,11 +107,13 @@ def plot_state_path(df_ep, episode=0):
     plt.xlabel('pos')
     plt.ylabel('vel')
     plt.title('States')
+    plt.legend()
 
 def plot_reward(df_ep, episode=0):
     plt.plot(df_ep['reward'], label='total(ep={})={},'.format(episode, df_ep['reward'].sum()))
     plt.xlabel('steps')
     plt.ylabel('reward')
+    plt.legend()
 
 def plot_policy(agent):
     xys = uniform_state_grid()
@@ -120,31 +123,21 @@ def plot_policy(agent):
     plt.ylabel('vel')
     plt.title("Policy")
 
-
-def show_episode(df, episode=-1):
-    if episode<0:
-        episode = df['episode'][len(df['episode'])-1]
-
-    df_ep = df[df['episode']==episode].reset_index()
-    plt.subplot(1, 2, 1)
-    plot_state_path(df_ep, episode)
-    plt.subplot(1, 2, 2)
-    plot_reward(df_ep, episode)
-    plt.legend()
-    plt.show()
-
 def plot_rewards(df):
     rewards = df.groupby(['episode']).agg({'reward':'sum'})
+    steps = df.groupby(['episode']).agg({'reward': 'count'})
 
     plt.plot(rewards)
     plt.plot(running_average(rewards), label='running avg')
+    plt.plot(running_average(steps), label='steps')
     plt.xlabel('episode')
     plt.ylabel('reward')
     plt.title('rewards')
+    plt.legend()
 
 def plot_state_usage(df):
     x, y = df['state1'], df['state2']
-    plt.hist2d(x, y)
+    plt.hist2d(x, y, bins=40, norm=LogNorm())
     plt.colorbar()
     plt.xlabel('pos')
     plt.ylabel('vel')
@@ -157,6 +150,23 @@ def plot_action_usage(df):
     plt.xlabel('actions')
     plt.ylabel('%')
     plt.title("usage")
+
+def show_episode(df, episode=-1):
+    if episode<0:
+        rewards = df.groupby(['episode']).agg({'episode':'first', 'reward': 'sum'})
+        episode = int(rewards.loc[rewards['reward'].idxmax()]['episode'])
+
+
+    df_ep = df[df['episode']==episode].reset_index()
+
+    plt.subplot(1, 2, 1)
+    plot_state_path(df_ep, episode)
+
+    plt.subplot(1, 2, 2)
+    plot_reward(df_ep, episode)
+
+    plt.tight_layout()
+    plt.show()
 
 def show_progress(df, agent):
     plt.figure(figsize=(15, 10))
