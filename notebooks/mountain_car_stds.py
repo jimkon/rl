@@ -145,6 +145,8 @@ def plot_rewards(df):
 def plot_state_usage(df):
     x, y = df['state1'], df['state2']
     plt.hist2d(x, y, bins=40, norm=LogNorm())
+    plt.xlim(state_low[0], state_high[0])
+    plt.ylim(state_low[1], state_high[1])
     plt.colorbar()
     plt.xlabel('pos')
     plt.ylabel('vel')
