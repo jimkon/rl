@@ -7,5 +7,5 @@ setup(name='rl_lib',
       author='jimkon',
       author_email='dkontzedakis@gmail.com',
       license='MIT',
-      packages=['rl_lib'],
+      packages=['rl_lib', 'numpy', 'tensorflow', 'matplotlib'],
       zip_safe=False)
