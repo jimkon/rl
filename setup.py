@@ -7,5 +7,6 @@ setup(name='rl_lib',
       author='jimkon',
       author_email='dkontzedakis@gmail.com',
       license='MIT',
-      packages=['rl_lib', 'numpy', 'tensorflow', 'matplotlib'],
+      install_requires=['numpy', 'tensorflow', 'matplotlib'],
+      packages=['rl_lib'],
       zip_safe=False)
