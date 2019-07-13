@@ -35,10 +35,9 @@ class MountainCarRewardWrapper(gym.RewardWrapper):
         return res
 
 
-def uniform_state_grid(points_per_axis=100):
-    s1, s2 = np.linspace(state_low[0], state_high[0], points_per_axis), np.linspace(state_low[1],
-                                                                                          state_high[1],
-                                                                                          points_per_axis)
+def uniform_state_grid(points_per_axis=31):
+    s1, s2 = np.linspace(state_low[0], state_high[0], points_per_axis),\
+             np.linspace(state_low[1], state_high[1], points_per_axis)
     return np.array([np.array([x, y]) for x in s1 for y in s2])
 
 
@@ -114,19 +113,19 @@ def average_reward(df):
 def plot(xys, v):
     plt.scatter(xys[:, 0], xys[:, 1], c=v, s=10)
     plt.grid(True)
-    plt.colorbar()
 
 
-def show_Q(qlearning_agent, a=None):
+def show_Q(qlearning_agent):
     xys = uniform_state_grid()
-    actions = range(actions_num) if a is None else a
+    Q = np.array([np.array(qlearning_agent.Q(xy)) for xy in xys])
     plt.figure(figsize=(15, 5))
-    for action in actions:
-        plt.subplot(1, len(actions), action + 1)
+    for action in range(Q.shape[1]):
+        plt.subplot(1, Q.shape[1], action + 1)
         plt.title("Q(s in S, action = {})".format(action))
-        Qs = np.array([qlearning_agent.Q(xy, action) for xy in xys])
+        Qs = Q[:, action]
         plot(xys, Qs)
-
+        plt.colorbar(orientation='horizontal')
+    plt.tight_layout()
     plt.show()
 
 
@@ -150,6 +149,7 @@ def plot_policy(agent):
     xys = uniform_state_grid()
     actions = np.array([agent.act(xy) for xy in xys])
     plot(xys, actions)
+    plt.colorbar(ticks=[0, 1, 2])
     plt.xlabel('pos')
     plt.ylabel('vel')
     plt.title("Policy")
