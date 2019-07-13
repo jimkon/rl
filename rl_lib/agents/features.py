@@ -20,7 +20,7 @@ class FeatureAgent(rl.Agent):
 
 class RandomFeatureAgent(FeatureAgent):
 
-    def __init__(self, state_dims, actions_dims):
-        super().__init__(np.random.random((actions_dims, state_dims)))
-
+    def __init__(self, state_dims, actions_dims, distribution=np.random.normal, **distr_args):
+        features = distribution(size=(actions_dims, state_dims), **distr_args)
+        super().__init__(features)
 
