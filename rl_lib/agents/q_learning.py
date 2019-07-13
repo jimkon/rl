@@ -97,20 +97,34 @@ class RBFQLearningAgent(QLearningAgent):
     def __init__(self, state_dims, actions_num, samplers=None, constant_samplers=False, constant_gammas=True,
                  epsilon_factor=1):
         super().__init__(state_dims=state_dims, actions_num=actions_num, epsilon_factor=epsilon_factor)
-        self.nets = [rl.utils.nets.RBFNet(samplers=samplers, constant_samplers=constant_samplers, constant_gammas=constant_gammas) for
+        self.nets = [rl.nets.RBFNet(samplers=samplers, constant_samplers=constant_samplers, constant_gammas=constant_gammas) for
                      _ in range(self.actions_num)]
 
         for net in self.nets:
-            net.create_net(state_dims, 1)  # net.partial_fit(np.zeros(self.state_dims), np.array(0))
+            net.create_net(state_dims, 1)
 
     def Q(self, state, action=None):
         if action is None:
             return np.array([self.nets[int(a)].predict(state) for a in range(self.actions_num)])
-        return self.nets[int(action)].predict(state)
+        return self.nets[int(action)].predict(state)[0]
 
     def Q_update(self, s, a, q_value):
         # print("update", s, a, q_value, self.Q(s, a))
-        self.nets[int(a)].partial_fit(s, np.array(q_value))
+        self.nets[int(a)].partial_fit(s, np.array([q_value]))
+
+    def plot_samplers(self):
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(20, 10))
+        for i, net in enumerate(self.nets):
+            centers, gammas, weights = net.info()
+
+            plt.subplot(1, 3, i + 1)
+            plt.title('Q RBF net {}'.format(i))
+            plt.scatter(centers[:, 0], centers[:, 1], s=20 * gammas, c=weights[:, 0])
+            plt.colorbar(orientation='horizontal')
+
+        plt.tight_layout()
+        plt.show()
 
 
 class NNQLearningAgent(QLearningAgent):

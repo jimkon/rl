@@ -42,25 +42,6 @@ def uniform_state_grid(points_per_axis=100):
     return np.array([np.array([x, y]) for x in s1 for y in s2])
 
 
-def plot(xys, v):
-    plt.scatter(xys[:, 0], xys[:, 1], c=v, s=10)
-    plt.grid(True)
-    plt.colorbar()
-
-
-def plot_Q(qlearning_agent, a=None):
-    xys = uniform_state_grid()
-    actions = range(actions_num) if a is None else a
-    plt.figure(figsize=(15, 5))
-    for action in actions:
-        plt.subplot(1, len(actions), action + 1)
-        plt.title("Q(s in S, action = {})".format(action))
-        Qs = np.array([qlearning_agent.Q(xy, action) for xy in xys])
-        plot(xys, Qs)
-
-    plt.show()
-
-
 def run(agent, episodes=1000, verbose=2):
     run_start_time = time.time()
     df = pd.DataFrame()
@@ -128,6 +109,25 @@ def episode_rewards(df):
 def average_reward(df):
     rewards = episode_rewards(df)
     return rewards['reward'].mean()
+
+
+def plot(xys, v):
+    plt.scatter(xys[:, 0], xys[:, 1], c=v, s=10)
+    plt.grid(True)
+    plt.colorbar()
+
+
+def show_Q(qlearning_agent, a=None):
+    xys = uniform_state_grid()
+    actions = range(actions_num) if a is None else a
+    plt.figure(figsize=(15, 5))
+    for action in actions:
+        plt.subplot(1, len(actions), action + 1)
+        plt.title("Q(s in S, action = {})".format(action))
+        Qs = np.array([qlearning_agent.Q(xy, action) for xy in xys])
+        plot(xys, Qs)
+
+    plt.show()
 
 
 def plot_state_path(df_ep, episode=0):
