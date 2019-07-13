@@ -20,7 +20,7 @@ class QLearningAgent(rl.Agent):
         pass
 
     def act(self, state):
-        if self.actions_num > 0 and np.random.random() < rl.utils.epsilon(self.episode * self.epsilon_factor):
+        if self.actions_num > 0 and np.random.random() < rl.utils.epsilon(self.episode) * self.epsilon_factor:
             return np.random.randint(self.actions_num)
         super().act(state)
         return np.argmax(self.Q(state))
@@ -39,6 +39,15 @@ class QLearningAgent(rl.Agent):
         """
         incr = alpha * (r + gamma * np.max(self.Q(s_)) - self.Q(s, a))
         return self.Q(s, a) + incr
+
+    def disable_epsilon(self):
+        self.epsilon_factor = -np.abs(self.epsilon_factor)
+
+    def enable_epsilon(self):
+        self.epsilon_factor = np.abs(self.epsilon_factor)
+
+    def toggle_epsilon(self):
+        self.epsilon_enabled *= -1
 
     def Q(self, state, action=None):
         """
@@ -105,7 +114,7 @@ class RBFQLearningAgent(QLearningAgent):
 
     def Q(self, state, action=None):
         if action is None:
-            return np.array([self.nets[int(a)].predict(state) for a in range(self.actions_num)])
+            return np.array([self.nets[int(a)].predict(state)[0] for a in range(self.actions_num)])
         return self.nets[int(action)].predict(state)[0]
 
     def Q_update(self, s, a, q_value):
