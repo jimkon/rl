@@ -40,6 +40,9 @@ class QLearningAgent(rl.Agent):
         incr = alpha * (r + gamma * np.max(self.Q(s_)) - self.Q(s, a))
         return self.Q(s, a) + incr
 
+    def epsilon_enabled(self):
+        return self.epsilon_factor>0
+
     def disable_epsilon(self):
         self.epsilon_factor = -np.abs(self.epsilon_factor)
 
