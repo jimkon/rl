@@ -2,11 +2,13 @@ import numpy as np
 import time
 import gym
 import pandas as pd
-import matplotlib.pyplot as plt
-plt.style.use("bmh")
-from matplotlib.colors import LogNorm
 
 from rl_lib.utils.utils import running_average
+
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+plt.style.use("bmh")
+
 
 class MountainCarRewardWrapper(gym.RewardWrapper):
 
@@ -31,6 +33,7 @@ class MountainCarRewardWrapper(gym.RewardWrapper):
         res = np.linalg.norm((self.state-self.center)/self.normalize_scaler)
         res += -1.4142# + (1 if won else .0)
         return res
+
 
 def uniform_state_grid(points_per_axis=100):
     s1, s2 = np.linspace(state_low[0], state_high[0], points_per_axis), np.linspace(state_low[1],
@@ -57,7 +60,8 @@ def plot_Q(qlearning_agent, a=None):
 
     plt.show()
 
-def run(agent, episodes=1000, verbose=True):
+
+def run(agent, episodes=1000, verbose=2):
     run_start_time = time.time()
     df = pd.DataFrame()
     states, actions, rewards, states_, dones = [], [], [], [], []
@@ -88,7 +92,7 @@ def run(agent, episodes=1000, verbose=True):
 
             step_count+= 1
 
-        if verbose:
+        if verbose >= 2:
             time_took = 1e3*(time.time()-episode_start_time)
             print('Episode {} finished after {} steps with total reward {:.1f} in  {:.1f} ms ({:.2f} per step)'.format(episode,
                                                                                    step_count,
@@ -103,8 +107,28 @@ def run(agent, episodes=1000, verbose=True):
     df = pd.concat([df, pd.DataFrame(np.array(dones), columns=['dones'])], axis=1)
     df['episode'] = df['dones'].cumsum()-df['dones'] # number of episode
     run_time = (time.time()-run_start_time)
-    print("Run {} episodes in {:.02f} seconds".format(episodes, run_time))
+    if verbose >= 1:
+        print("Run {} episodes in {:.02f} seconds. Average reward {}".format(episodes, run_time, average_reward(df)))
     return df
+
+
+def best_episode(df):
+    rewards = df.groupby(['episode']).agg({
+                                                  'episode': 'first',
+                                                  'reward' : 'sum'
+                                                  })
+    episode = int(rewards.loc[rewards['reward'].idxmax()]['episode'])
+    return episode
+
+
+def episode_rewards(df):
+    return df.groupby(['episode']).agg({'reward' : 'sum'})
+
+
+def average_reward(df):
+    rewards = episode_rewards(df)
+    return rewards['reward'].mean()
+
 
 def plot_state_path(df_ep, episode=0):
     plt.plot(df_ep['state1'], df_ep['state2'], linewidth=.5, label='episode {}'.format(episode))
@@ -131,10 +155,10 @@ def plot_policy(agent):
     plt.title("Policy")
 
 def plot_rewards(df):
-    rewards = df.groupby(['episode']).agg({'reward':'sum'})
+    rewards = episode_rewards(df)
     steps = df.groupby(['episode']).agg({'reward': 'count'})
 
-    plt.plot(rewards)
+    plt.plot(rewards, label='avg reward {:.02f}'.format(average_reward(df)))
     plt.plot(running_average(rewards), label='running avg')
     plt.plot(running_average(steps), label='steps')
     plt.xlabel('episode')
@@ -162,11 +186,9 @@ def plot_action_usage(df):
 
 def show_episode(df, episode=-1):
     if episode<0:
-        rewards = df.groupby(['episode']).agg({'episode':'first', 'reward': 'sum'})
-        episode = int(rewards.loc[rewards['reward'].idxmax()]['episode'])
+        episode = best_episode(df)
 
-
-    df_ep = df[df['episode']==episode].reset_index()
+    df_ep = df[df['episode'] == episode].reset_index()
 
     plt.figure(figsize=(15, 5))
     plt.subplot(1, 2, 1)
