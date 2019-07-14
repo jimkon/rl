@@ -145,7 +145,7 @@ def plot_action_path(df_ep):
         s1 = action_df['state1']
         s2 = action_df['state2']
         plt.scatter(s1, s2, marker=marker, s=15, label='a={}'.format(action))
-    
+
     plt.xlabel('pos')
     plt.ylabel('vel')
     plt.legend()
