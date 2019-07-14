@@ -1,6 +1,7 @@
 develop.py
 .idea
 clipboard.py
+run_clipboard.py
 
 rl_lib.egg-info/*
 

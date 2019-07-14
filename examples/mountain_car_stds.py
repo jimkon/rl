@@ -4,6 +4,7 @@ import gym
 import pandas as pd
 
 from rl_lib.utils.utils import running_average
+from rl_lib.agents.q_learning import QLearningAgent
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
@@ -35,30 +36,10 @@ class MountainCarRewardWrapper(gym.RewardWrapper):
         return res
 
 
-def uniform_state_grid(points_per_axis=100):
-    s1, s2 = np.linspace(state_low[0], state_high[0], points_per_axis), np.linspace(state_low[1],
-                                                                                          state_high[1],
-                                                                                          points_per_axis)
+def uniform_state_grid(points_per_axis=31):
+    s1, s2 = np.linspace(state_low[0], state_high[0], points_per_axis),\
+             np.linspace(state_low[1], state_high[1], points_per_axis)
     return np.array([np.array([x, y]) for x in s1 for y in s2])
-
-
-def plot(xys, v):
-    plt.scatter(xys[:, 0], xys[:, 1], c=v, s=10)
-    plt.grid(True)
-    plt.colorbar()
-
-
-def plot_Q(qlearning_agent, a=None):
-    xys = uniform_state_grid()
-    actions = range(actions_num) if a is None else a
-    plt.figure(figsize=(15, 5))
-    for action in actions:
-        plt.subplot(1, len(actions), action + 1)
-        plt.title("Q(s in S, action = {})".format(action))
-        Qs = np.array([qlearning_agent.Q(xy, action) for xy in xys])
-        plot(xys, Qs)
-
-    plt.show()
 
 
 def run(agent, episodes=1000, verbose=2):
@@ -130,6 +111,25 @@ def average_reward(df):
     return rewards['reward'].mean()
 
 
+def plot(xys, v):
+    plt.scatter(xys[:, 0], xys[:, 1], c=v, s=80, marker='s')
+    plt.grid(True)
+
+
+def show_Q(qlearning_agent):
+    xys = uniform_state_grid()
+    Q = np.array([np.array(qlearning_agent.Q(xy)) for xy in xys])
+    plt.figure(figsize=(15, 5))
+    for action in range(Q.shape[1]):
+        plt.subplot(1, Q.shape[1], action + 1)
+        plt.title("Q(s in S, action = {})".format(action))
+        Qs = Q[:, action]
+        plot(xys, Qs)
+        plt.colorbar(orientation='horizontal')
+    plt.tight_layout()
+    plt.show()
+
+
 def plot_state_path(df_ep, episode=0):
     plt.plot(df_ep['state1'], df_ep['state2'], linewidth=.5, label='episode {}'.format(episode))
     plt.scatter([df_ep['state1'][0]], [df_ep['state2'][0]], c='g', marker='^')
@@ -137,10 +137,21 @@ def plot_state_path(df_ep, episode=0):
                 marker='v')
     plt.xlabel('pos')
     plt.ylabel('vel')
-    plt.title('States')
+    plt.legend()
+
+def plot_action_path(df_ep):
+    for action, marker in enumerate(['<', '+', '>']):
+        action_df = df_ep[df_ep['action'] == action]
+        s1 = action_df['state1']
+        s2 = action_df['state2']
+        plt.scatter(s1, s2, marker=marker, s=15, label='a={}'.format(action))
+
+    plt.xlabel('pos')
+    plt.ylabel('vel')
     plt.legend()
 
 def plot_reward(df_ep, episode=0):
+    plt.title('Reward')
     plt.plot(df_ep['reward'], label='total(ep={})={},'.format(episode, df_ep['reward'].sum()))
     plt.xlabel('steps')
     plt.ylabel('reward')
@@ -148,8 +159,16 @@ def plot_reward(df_ep, episode=0):
 
 def plot_policy(agent):
     xys = uniform_state_grid()
+
+    epsilon_enabled = agent.epsilon_enabled()
+    if isinstance(agent, QLearningAgent) and epsilon_enabled:
+        agent.disable_epsilon()
     actions = np.array([agent.act(xy) for xy in xys])
+    if isinstance(agent, QLearningAgent) and epsilon_enabled:
+        agent.enable_epsilon()
+
     plot(xys, actions)
+    plt.colorbar(ticks=[0, 1, 2])
     plt.xlabel('pos')
     plt.ylabel('vel')
     plt.title("Policy")
@@ -192,7 +211,9 @@ def show_episode(df, episode=-1):
 
     plt.figure(figsize=(15, 5))
     plt.subplot(1, 2, 1)
+    plt.title('States, Actions')
     plot_state_path(df_ep, episode)
+    plot_action_path(df_ep)
 
     plt.subplot(1, 2, 2)
     plot_reward(df_ep, episode)
@@ -221,5 +242,6 @@ def show_progress(df, agent):
 unwrapped_env = gym.make("MountainCar-v0")
 env = MountainCarRewardWrapper(unwrapped_env)
 
-state_low, state_high = env.observation_space.low, env.observation_space.high
+state_low, state_high = np.array(env.observation_space.low, np.float64),\
+                        np.array(env.observation_space.high, np.float64)
 actions_num = env.action_space.n
