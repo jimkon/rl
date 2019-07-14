@@ -112,7 +112,7 @@ def average_reward(df):
 
 
 def plot(xys, v):
-    plt.scatter(xys[:, 0], xys[:, 1], c=v, s=10)
+    plt.scatter(xys[:, 0], xys[:, 1], c=v, s=80, marker='s')
     plt.grid(True)
 
 
@@ -229,5 +229,6 @@ def show_progress(df, agent):
 unwrapped_env = gym.make("MountainCar-v0")
 env = MountainCarRewardWrapper(unwrapped_env)
 
-state_low, state_high = env.observation_space.low, env.observation_space.high
+state_low, state_high = np.array(env.observation_space.low, np.float64),\
+                        np.array(env.observation_space.high, np.float64)
 actions_num = env.action_space.n
