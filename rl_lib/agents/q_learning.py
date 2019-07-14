@@ -113,22 +113,32 @@ class TabularQLearningAgent(QLearningAgent):
 
 class RBFQLearningAgent(QLearningAgent):
 
-    def __init__(self, state_dims, actions_num, samplers=None, constant_samplers=False, constant_gammas=True,
+    def __init__(self, state_dims, actions_num, samplers=None, constant_samplers=False, low=None, high=None,  constant_gammas=True,
                  epsilon_factor=1):
         super().__init__(state_dims=state_dims, actions_num=actions_num, epsilon_factor=epsilon_factor)
-        self.nets = [rl.nets.RBFNet(samplers=samplers, constant_samplers=constant_samplers, constant_gammas=constant_gammas) for
-                     _ in range(self.actions_num)]
+
+        self.low = np.array(low) if low is not None else -np.ones(state_dims)
+        self.high = np.array(high) if high is not None else np.ones(state_dims)
+        self.scale = self.high-self.low
+
+        self.nets = [rl.nets.RBFNet(samplers=samplers, constant_samplers=constant_samplers, constant_gammas=constant_gammas)
+                     for _ in range(self.actions_num)]
 
         for net in self.nets:
             net.create_net(state_dims, 1)
 
+    def scaler(self, state):
+        scaled = 2*(state-self.low)/self.scale-1
+        return scaled
+
     def Q(self, state, action=None):
+        state = self.scaler(state)
         if action is None:
             return np.array([self.nets[int(a)].predict(state)[0] for a in range(self.actions_num)])
         return self.nets[int(action)].predict(state)[0]
 
     def Q_update(self, s, a, q_value):
-        # print("update", s, a, q_value, self.Q(s, a))
+        s = self.scaler(s)
         self.nets[int(a)].partial_fit(s, np.array([q_value]))
 
     def plot_samplers(self):
@@ -136,12 +146,14 @@ class RBFQLearningAgent(QLearningAgent):
         plt.figure(figsize=(15, 8))
         for i, net in enumerate(self.nets):
             centers, gammas, weights = net.info()
-
+            min_g, max_g = np.min(gammas), np.max(gammas)
+            sizes = 10+200*(gammas-min_g)*(max_g-min_g)
             plt.subplot(1, 3, i + 1)
             plt.title('Q RBF net {}'.format(i))
-            plt.scatter(centers[:, 0], centers[:, 1], s=20 * gammas, c=weights[:, 0])
+            plt.scatter(centers[:, 0], centers[:, 1], s=sizes, c=weights[:, 0],
+                        label='gammas [{:.01e}, {:.01e}]'.format(min_g, max_g))
             plt.colorbar(orientation='horizontal')
-
+            plt.legend()
         plt.tight_layout()
         plt.show()
 
