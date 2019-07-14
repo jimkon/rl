@@ -137,10 +137,21 @@ def plot_state_path(df_ep, episode=0):
                 marker='v')
     plt.xlabel('pos')
     plt.ylabel('vel')
-    plt.title('States')
+    plt.legend()
+
+def plot_action_path(df_ep):
+    for action, marker in enumerate(['<', '+', '>']):
+        action_df = df_ep[df_ep['action'] == action]
+        s1 = action_df['state1']
+        s2 = action_df['state2']
+        plt.scatter(s1, s2, marker=marker, s=15, label='a={}'.format(action))
+    
+    plt.xlabel('pos')
+    plt.ylabel('vel')
     plt.legend()
 
 def plot_reward(df_ep, episode=0):
+    plt.title('Reward')
     plt.plot(df_ep['reward'], label='total(ep={})={},'.format(episode, df_ep['reward'].sum()))
     plt.xlabel('steps')
     plt.ylabel('reward')
@@ -200,7 +211,9 @@ def show_episode(df, episode=-1):
 
     plt.figure(figsize=(15, 5))
     plt.subplot(1, 2, 1)
+    plt.title('States, Actions')
     plot_state_path(df_ep, episode)
+    plot_action_path(df_ep)
 
     plt.subplot(1, 2, 2)
     plot_reward(df_ep, episode)
