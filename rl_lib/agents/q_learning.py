@@ -13,16 +13,15 @@ class QLearningAgent(rl.Agent):
     """
 
     def __init__(self, state_dims=-1, actions_num=-1, epsilon_factor=1):
-        self.state_dims = state_dims
-        self.actions_num = actions_num
+        super().__init__(state_dims, actions_num)
         self.epsilon_factor = epsilon_factor
         self.episode = -1
         pass
 
     def act(self, state):
+        super().act(state)
         if self.actions_num > 0 and np.random.random() < rl.utils.epsilon(self.episode) * self.epsilon_factor:
             return np.random.randint(self.actions_num)
-        super().act(state)
         return np.argmax(self.Q(state))
 
     def observe(self, state, action, reward, state_, episode=-1, step=-1):
@@ -37,8 +36,15 @@ class QLearningAgent(rl.Agent):
         """
         Q(s, a) = Q(s, a) + a*[ r + gamma * argmax_a_(Q(s_, a_)) - Q(s, a) ]
         """
-        incr = alpha * (r + gamma * np.max(self.Q(s_)) - self.Q(s, a))
-        return self.Q(s, a) + incr
+        q_s = self.Q(s_)
+        q_sa = self.Q(s, a)
+        assert q_s.shape[0] == self.actions_num,\
+            'Q(s_, None) must have length of {}, got {} instead'.format(q_s.shape[0], self.actions_num)
+        assert not hasattr(q_sa, "__len__"),\
+            'Q(s, a) must be scalar, got array with len {} instead'.format(len(q_sa))
+
+        incr = alpha * (r + gamma * np.max(q_s) - q_sa)
+        return q_sa + incr
 
     def epsilon_enabled(self):
         return self.epsilon_factor>0
@@ -58,10 +64,11 @@ class QLearningAgent(rl.Agent):
         :param list action: action vector
         :return list: action vector
         """
-        return 0
+        raise NotImplementedError
 
     def Q_update(self, s, a, q_value):
-        pass
+
+        raise NotImplementedError
 
 
 class TabularQLearningAgent(QLearningAgent):
@@ -126,7 +133,7 @@ class RBFQLearningAgent(QLearningAgent):
 
     def plot_samplers(self):
         import matplotlib.pyplot as plt
-        plt.figure(figsize=(20, 10))
+        plt.figure(figsize=(15, 8))
         for i, net in enumerate(self.nets):
             centers, gammas, weights = net.info()
 
