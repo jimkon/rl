@@ -116,7 +116,7 @@ def plot(xys, v):
     plt.grid(True)
 
 
-def show_Q(qlearning_agent):
+def show_Q(qlearning_agent, save_q_path=None):
     xys = uniform_state_grid()
     Q = np.array([np.array(qlearning_agent.Q(xy)) for xy in xys])
     plt.figure(figsize=(15, 5))
@@ -129,6 +129,11 @@ def show_Q(qlearning_agent):
     plt.tight_layout()
     plt.show()
 
+    if save_q_path is not None:
+        save_df = pd.DataFrame(xys, columns=['state1', 'state2'])
+        save_df = pd.concat([save_df, pd.DataFrame(Q, columns=['action1', 'action2', 'action3'])], axis=1)
+        save_df.to_csv(save_q_path, index=False)
+        print("Q values saved in ", save_q_path)
 
 def plot_state_path(df_ep, episode=0):
     plt.plot(df_ep['state1'], df_ep['state2'], linewidth=.5, label='episode {}'.format(episode))
