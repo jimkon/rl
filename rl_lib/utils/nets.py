@@ -26,14 +26,14 @@ class RBFNet:
                 else:
                     self.samplers_num = self.samplers
 
-                self.samplers = np.random.random((self.samplers_num, self.input_dimensions))*2-1
+                self.samplers = np.random.random((self.samplers_num, self.input_dimensions)) * 2 - 1
             else:
                 # if samplers parameter is array
                 self.samplers = np.array(self.samplers)
                 self.samplers_num = self.samplers.shape[0]
         else:
             self.samplers_num = self.input_dimensions
-            self.samplers = np.random.random((self.samplers_num, self.input_dimensions))*2-1
+            self.samplers = np.random.random((self.samplers_num, self.input_dimensions)) * 2 - 1
 
         assert self.output_dimensions == 1, 'Not tested for more than 1 output dimensions'
         assert self.input_dimensions == self.samplers.shape[1], 'Samplers dimensions don\'t match with input dimensions'
@@ -45,7 +45,6 @@ class RBFNet:
 
         self.input_shape = tuple([self.input_dimensions])
         self.output_shape = tuple([self.output_dimensions])
-
 
         # variables
         if self.constant_samplers:
@@ -60,7 +59,7 @@ class RBFNet:
             self.gammas = tf.Variable(gammas)
 
         self.weights = tf.Variable(
-            np.random.random((self.samplers_num, self.output_dimensions)) * (1 / self.samplers_num))
+                np.random.random((self.samplers_num, self.output_dimensions)) * (1 / self.samplers_num))
 
         # placeholders
         self.x = tf.compat.v1.placeholder(tf.float64, (self.input_dimensions))
@@ -84,23 +83,23 @@ class RBFNet:
         self.initialized = True
 
     def predict(self, X):
-        assert X.shape == self.input_shape,\
-            'X.shape = {}, self.input_shape = {}'.format(X.shape, self.input_shape)
+        assert self.initialized, 'must call fit before predict'
+        assert X.shape == self.input_shape, 'X.shape = {}, it should be {}'.format(X.shape, self.input_shape)
 
         res = self.sess.run(self.output, feed_dict={
                 self.x: X
         })[0]
-        assert res.shape == self.output_shape,\
-            'predict.shape = {}, self.output_shape = {}'.format(res.shape, self.output_shape)
+        assert res.shape == self.output_shape, 'predict.shape = {}, it should be {}'.format(res.shape,
+                                                                                                   self.output_shape)
 
         return res
 
     def partial_fit(self, X, y):
-        assert X.shape == self.input_shape, 'X.shape = {}, self.input_shape = {}'.format(X.shape, self.input_shape)
-        assert y.shape == self.output_shape, 'y.shape = {}, self.output_shape = {}'.format(y.shape,
-                                                                                                self.output_shape)
         if not self.initialized:
             self.create_net(X.shape[0], y.shape[0])
+
+        assert X.shape == self.input_shape, 'X.shape = {}, it should be {}'.format(X.shape, self.input_shape)
+        assert y.shape == self.output_shape, 'y.shape = {}, it should be {}'.format(y.shape, self.output_shape)
 
         self.sess.run(self.train, feed_dict={
                 self.x: X,
@@ -115,10 +114,10 @@ class RBFNet:
         return centers, gammas, weights
 
 
-def nn_layer(x, size, activation=tf.nn.relu, drop_out=True, drop_out_rate=0.3, return_vars=True):
+def nn_layer(x, size, activation=tf.nn.relu, drop_out=0.3, return_vars=True):
     # x*W+b
     if drop_out:
-        x = tf.nn.dropout(x, rate=drop_out_rate)
+        x = tf.nn.dropout(x, rate=drop_out)
 
     W = tf.Variable(np.random.random((x.shape[1], size)) * (1. / (int(x.shape[1]) * size)))
     b = tf.Variable(np.random.random((1, size)) * (1. / size))
@@ -137,9 +136,12 @@ def nn_layer(x, size, activation=tf.nn.relu, drop_out=True, drop_out_rate=0.3, r
 class FullyConnectedDNN:
 
     def __init__(self, input_dims, output_dims, hidden_layers=[200, 100], activations=[tf.nn.relu, tf.nn.relu],
-                 drop_out=True, drop_out_rate=.3, lr=1e-2):
+                 drop_out=.3, lr=1e-2):
         self.input_dims = input_dims
         self.output_dims = output_dims
+
+        self.input_shape = tuple([self.input_dims])
+        self.output_shape = tuple([self.output_dims])
 
         layers = np.append(hidden_layers, output_dims)
         activations = activations.copy()
@@ -151,8 +153,7 @@ class FullyConnectedDNN:
         self.x = tf.compat.v1.placeholder(tf.float64, shape=(None, input_dims))
         x = self.x
         for i, layer in enumerate(layers):
-            y, W, b = nn_layer(x, layer, activations[i], drop_out=(drop_out and i > 0), drop_out_rate=drop_out_rate,
-                               return_vars=True)
+            y, W, b = nn_layer(x, layer, activations[i], drop_out=drop_out if i > 0 else 0., return_vars=True)
 
             self.ys.append(y)
             self.Ws.append(W)
@@ -175,16 +176,32 @@ class FullyConnectedDNN:
         self.sess.run(self.init_op)
 
     def predict(self, X):
+
+        assert X.shape == self.input_shape,\
+            'X.shape = {}, it should be {}'.format(X.shape, self.input_shape)
+
         if len(X.shape) == 1:
             X = np.reshape(X, (-1, self.input_dims))
 
         result = self.sess.run(self.y, feed_dict={
                 self.x: X
-        })
+        })[0]
+
+        assert result.shape == self.output_shape,\
+            'predict.shape = {}, it should be {}'.format(result.shape, self.output_shape)
 
         return result
 
     def fit(self, X, y):
+
+        assert X.shape[0] == y.shape[0],\
+            'X.shape[0] != y.shape[0], {} != {}'.format(X.shape[0], y.shape[0])
+
+        assert X.shape[1] == self.input_shape[0],\
+            'X.shape[1] = {}, it should be {}'.format(X.shape, self.input_shape)
+        assert y.shape[1] == self.output_shape[0],\
+            'y.shape[1] = {}, it should be {}'.format(y.shape, self.output_shape)
+
         self.sess.run(self.train, feed_dict={
                 self.x : X,
                 self.y_: y

@@ -21,3 +21,24 @@ def epsilon(n):
     if n<0:
         return .0
     return  1.0 / np.sqrt(n + 1)
+
+
+class BatchBuffer:
+
+    def __init__(self, maxsize):
+        self.__maxsize = maxsize
+        self.__buffer = []
+
+    def push(self, items):
+        self.__buffer.append(items)
+        self.__pop_extra()
+
+    def __pop_extra(self):
+        extra = len(self.__buffer)-self.__maxsize
+        for _ in range(extra):
+            self.__buffer.pop(0)
+
+    def get_random(self, count=1):
+        indexes = np.random.randint(0, len(self.__buffer), count)
+        return [self.__buffer[index] for index in indexes]
+

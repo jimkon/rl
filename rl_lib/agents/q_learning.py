@@ -158,22 +158,30 @@ class RBFQLearningAgent(QLearningAgent):
         plt.show()
 
 
-class NNQLearningAgent(QLearningAgent):
+class DNNQLearningAgent(QLearningAgent):
 
-    def __init__(self, state_dims, actions_num, hidden_layers=[200, 100], activations=[tf.nn.relu, tf.nn.relu],
-                 drop_out=True, drop_out_rate=.3, lr=1e-2, epsilon_factor=1):
-
+    def __init__(self, state_dims, actions_num, hidden_layers=[64, 32], activations=[tf.nn.relu, tf.nn.relu],
+                 drop_out=.3, lr=1e-2, low=None, high=None, epsilon_factor=1):
         super().__init__(state_dims=state_dims, actions_num=actions_num, epsilon_factor=epsilon_factor)
 
-        self.nets = [rl.utils.nets.FullyConnectedDNN(state_dims, 1, hidden_layers=hidden_layers, activations=activations,
-                                       drop_out=drop_out, drop_out_rate=drop_out_rate, lr=lr) for _ in
-                     range(self.actions_num)]
+        self.low = np.array(low) if low is not None else -np.ones(state_dims)
+        self.high = np.array(high) if high is not None else np.ones(state_dims)
+        self.scale = self.high-self.low
+
+        self.nets = [rl.nets.FullyConnectedDNN(state_dims, 1, hidden_layers=hidden_layers, activations=activations,
+                                               drop_out=drop_out, lr=lr) for _ in range(self.actions_num)]
+
+    def scaler(self, state):
+        scaled = 2*(state-self.low)/self.scale-1
+        return scaled
 
     def Q(self, state, action=None):
+        state = self.scaler(state)
         if action is None:
             return np.array([self.nets[int(a)].predict(state)[0] for a in range(self.actions_num)])
         return self.nets[int(action)].predict(state)[0]
 
     def Q_update(self, s, a, q_value):
-        print("update", s, a, q_value, self.Q(s, a))
-        self.nets[int(a)].partial_fit(np.array(s), np.array(q_value))
+        s = self.scaler(s)
+        self.nets[int(a)].partial_fit(s, np.array([q_value]))
+
