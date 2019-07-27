@@ -43,9 +43,9 @@ class BatchBuffer:
         return [self.__buffer[index] for index in indexes]
 
 
-class Mapper():
+class Mapper:
 
-    def scale(self, state):
+    def map(self, state):
         return state
 
 class StandardMapper(Mapper):
@@ -55,11 +55,12 @@ class StandardMapper(Mapper):
         self.high = np.array(high)
         self.lenght = self.high-self.low
 
-    def scale(self, state):
-        scaled = (state-self.low)/self.lenght
-        return scaled
+    def map(self, state):
+        mapped = (state-self.low)/self.lenght
+        return mapped
+
 
 class UnitMapper(StandardMapper):
 
-    def scale(self, state):
-        return 2*super().scale(state)-1
+    def map(self, state):
+        return 2*super().map(state)-1
