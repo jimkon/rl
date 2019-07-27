@@ -42,3 +42,25 @@ class BatchBuffer:
         indexes = np.random.randint(0, len(self.__buffer), count)
         return [self.__buffer[index] for index in indexes]
 
+
+class Mapper:
+
+    def map(self, state):
+        return state
+
+class StandardMapper(Mapper):
+
+    def __init__(self, low, high):
+        self.low = np.array(low)
+        self.high = np.array(high)
+        self.lenght = self.high-self.low
+
+    def map(self, state):
+        mapped = (state-self.low)/self.lenght
+        return mapped
+
+
+class UnitMapper(StandardMapper):
+
+    def map(self, state):
+        return 2*super().map(state)-1
