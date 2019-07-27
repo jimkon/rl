@@ -113,13 +113,11 @@ class TabularQLearningAgent(QLearningAgent):
 
 class RBFQLearningAgent(QLearningAgent):
 
-    def __init__(self, state_dims, actions_num, samplers=None, constant_samplers=False, low=None, high=None,  constant_gammas=True,
+    def __init__(self, state_dims, actions_num, samplers=None, constant_samplers=False, mapper=rl.utils.Mapper,  constant_gammas=True,
                  epsilon_factor=1):
         super().__init__(state_dims=state_dims, actions_num=actions_num, epsilon_factor=epsilon_factor)
 
-        self.low = np.array(low) if low is not None else -np.ones(state_dims)
-        self.high = np.array(high) if high is not None else np.ones(state_dims)
-        self.scale = self.high-self.low
+        self.mapper = mapper
 
         self.nets = [rl.nets.RBFNet(samplers=samplers, constant_samplers=constant_samplers, constant_gammas=constant_gammas)
                      for _ in range(self.actions_num)]
@@ -127,18 +125,14 @@ class RBFQLearningAgent(QLearningAgent):
         for net in self.nets:
             net.create_net(state_dims, 1)
 
-    def scaler(self, state):
-        scaled = 2*(state-self.low)/self.scale-1
-        return scaled
-
     def Q(self, state, action=None):
-        state = self.scaler(state)
+        state = self.mapper.map(state)
         if action is None:
             return np.array([self.nets[int(a)].predict(state)[0] for a in range(self.actions_num)])
         return self.nets[int(action)].predict(state)[0]
 
     def Q_update(self, s, a, q_value):
-        s = self.scaler(s)
+        s = self.mapper.map(s)
         self.nets[int(a)].partial_fit(s, np.array([q_value]))
 
     def plot_samplers(self):
@@ -161,27 +155,21 @@ class RBFQLearningAgent(QLearningAgent):
 class DNNQLearningAgent(QLearningAgent):
 
     def __init__(self, state_dims, actions_num, hidden_layers=[64, 32], activations=[tf.nn.relu, tf.nn.relu],
-                 drop_out=.3, lr=1e-2, low=None, high=None, epsilon_factor=1):
+                 drop_out=.3, lr=1e-2, mapper=rl.utils.Mapper, epsilon_factor=1):
         super().__init__(state_dims=state_dims, actions_num=actions_num, epsilon_factor=epsilon_factor)
 
-        self.low = np.array(low) if low is not None else -np.ones(state_dims)
-        self.high = np.array(high) if high is not None else np.ones(state_dims)
-        self.scale = self.high-self.low
+        self.mapper = mapper
 
         self.nets = [rl.nets.FullyConnectedDNN(state_dims, 1, hidden_layers=hidden_layers, activations=activations,
                                                drop_out=drop_out, lr=lr) for _ in range(self.actions_num)]
 
-    def scaler(self, state):
-        scaled = 2*(state-self.low)/self.scale-1
-        return scaled
-
     def Q(self, state, action=None):
-        state = self.scaler(state)
+        state = self.mapper.map(state)
         if action is None:
             return np.array([self.nets[int(a)].predict(state)[0] for a in range(self.actions_num)])
         return self.nets[int(action)].predict(state)[0]
 
     def Q_update(self, s, a, q_value):
-        s = self.scaler(s)
+        s = self.mapper.map(s)
         self.nets[int(a)].partial_fit(s, np.array([q_value]))
 
