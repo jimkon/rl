@@ -11,7 +11,7 @@ class PolicyModel(rl.nets.FullyConnectedDNN):
         self.gamma = gamma
 
         gammas_n = 1000
-        self.GAMMAS = np.power(gamma*np.ones(gammas_n), np.arange(gammas_n-1, -1))
+        self.GAMMAS = np.power(gamma*np.ones(gammas_n), np.arange(gammas_n, 0, -1)-1)
 
         self.pi_s = self.y
 
@@ -53,10 +53,26 @@ class PolicyModel(rl.nets.FullyConnectedDNN):
         return result
 
     def full_episode_update(self, states, actions, rewards, vs):
-        pass
+        states = np.atleast_2d(states)
+        actions = np.atleast_1d(actions)
+        rewards = np.atleast_1d(rewards)
+        vs = np.atleast_1d(vs)
+
+        size = len(states)
+        assert len(actions) == size
+        assert len(rewards) == size
+        assert len(vs) == size
+
+        self.sess.run(self.train, feed_dict={self.x: states,
+                                             self.actions: actions,
+                                             self.model.gammas: self.GAMMAS[-size:],
+                                             self.model.rewards: rewards,
+                                             self.model.vs: vs
+                                             })
 
 
-# model = PolicyModel(input_dims=2, output_dims=3, drop_out=.0)
+
+model = PolicyModel(input_dims=2, output_dims=3, drop_out=.0)
 # print(model.policy([[0, 1], [0, 1], [0, 1]], [0, 1, 2]), model.policy([0, 1])[0])
 # print((model.policy([[0, 1], [0, 1], [0, 1]], [0, 1, 2]) - model.policy([0, 1])[0])<1e-10)
 # # print(model.policy([[0, 1], [0, 1]]))
