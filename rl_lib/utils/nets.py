@@ -159,7 +159,7 @@ class FullyConnectedDNN:
         self.x = tf.compat.v1.placeholder(tf.float64, shape=(None, input_dims))
         x = self.x
         for i, layer in enumerate(layers):
-            y, W, b = nn_layer(x, layer, activations[i], drop_out=drop_out if i > 0 else 0., use_biases=use_biases[i], return_vars=True)
+            y, W, b = nn_layer(x, layer, activations[i], drop_out=drop_out if i > 0 else 0., use_bias=use_biases[i], return_vars=True)
 
             self.ys.append(y)
             self.Ws.append(W)
@@ -183,18 +183,11 @@ class FullyConnectedDNN:
 
     def predict(self, X):
 
-        assert X.shape == self.input_shape,\
-            'X.shape = {}, it should be {}'.format(X.shape, self.input_shape)
-
-        if len(X.shape) == 1:
-            X = np.reshape(X, (-1, self.input_dims))
+        X = np.atleast_2d(X)
 
         result = self.sess.run(self.y, feed_dict={
                 self.x: X
-        })[0]
-
-        assert result.shape == self.output_shape,\
-            'predict.shape = {}, it should be {}'.format(result.shape, self.output_shape)
+        })
 
         return result
 
@@ -214,4 +207,4 @@ class FullyConnectedDNN:
         })
 
     def partial_fit(self, X, y):
-        self.fit(np.array([X]), np.array([y]))
+        self.fit(np.atleast_2d(X), np.atleast_2d(y))
