@@ -165,12 +165,15 @@ def plot_reward(df_ep, episode=0):
 def plot_policy(agent):
     xys = uniform_state_grid()
 
-    epsilon_enabled = agent.epsilon_enabled()
-    if isinstance(agent, QLearningAgent) and epsilon_enabled:
-        agent.disable_epsilon()
-    actions = np.array([agent.act(xy) for xy in xys])
-    if isinstance(agent, QLearningAgent) and epsilon_enabled:
-        agent.enable_epsilon()
+    if isinstance(agent, QLearningAgent):
+        epsilon_enabled = agent.epsilon_enabled()
+        if epsilon_enabled:
+            agent.disable_epsilon()
+        actions = np.array([agent.act(xy) for xy in xys])
+        if epsilon_enabled:
+            agent.enable_epsilon()
+    else:
+        actions = np.array([agent.act(xy) for xy in xys])
 
     plot(xys, actions)
     plt.colorbar(ticks=[0, 1, 2])
