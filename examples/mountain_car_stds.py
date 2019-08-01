@@ -117,6 +117,7 @@ def plot(xys, v):
 
 
 def show_Q(qlearning_agent, save_q_path=None):
+    assert hasattr(qlearning_agent, 'Q')
     xys = uniform_state_grid()
     Q = np.array([np.array(qlearning_agent.Q(xy)) for xy in xys])
     plt.figure(figsize=(15, 5))
@@ -134,6 +135,25 @@ def show_Q(qlearning_agent, save_q_path=None):
         save_df = pd.concat([save_df, pd.DataFrame(Q, columns=['action1', 'action2', 'action3'])], axis=1)
         save_df.to_csv(save_q_path, index=False)
         print("Q values saved in ", save_q_path)
+
+def show_actor(agent):
+    assert hasattr(agent, 'actor')
+
+    xys = uniform_state_grid()
+    probs = np.array([np.array(agent.policy(xy)) for xy in xys])
+    plt.figure(figsize=(15, 5))
+    for action in range(probs.shape[1]):
+        plt.subplot(1, probs.shape[1], action + 1)
+        plt.title("π(s in S, action = {})".format(action))
+        Qs = probs[:, action]
+        plot(xys, Qs)
+        plt.colorbar(orientation='horizontal')
+    plt.tight_layout()
+    plt.show()
+
+def show_critic(agent):
+    plot_critic(agent)
+    plt.show()
 
 def plot_state_path(df_ep, episode=0):
     plt.plot(df_ep['state1'], df_ep['state2'], linewidth=.5, label='episode {}'.format(episode))
@@ -180,6 +200,19 @@ def plot_policy(agent):
     plt.xlabel('pos')
     plt.ylabel('vel')
     plt.title("Policy")
+
+def plot_critic(agent):
+    assert hasattr(agent, 'critic')
+
+    xys = uniform_state_grid()
+    values = agent.critic.value(xys)
+
+    plot(xys, values)
+    plt.colorbar()
+    plt.xlabel('pos')
+    plt.ylabel('vel')
+    plt.title("Value")
+
 
 def plot_rewards(df):
     rewards = episode_rewards(df)
