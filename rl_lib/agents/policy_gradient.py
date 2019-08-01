@@ -132,6 +132,8 @@ class PolicyGradientAgent(rl.Agent):
 
     def observe(self, state, action, reward, state_, episode=-1, step=-1):
         super().observe(state, action, reward, state_, episode, step)
+        state = self.mapper.map(state)
+        state_ = self.mapper.map(state_)
 
         if self.td_update:
             self.actor.td_update(state, action, reward)
@@ -151,6 +153,7 @@ class PolicyGradientAgent(rl.Agent):
             self.episode = episode
 
     def policy(self, state):
+        state = self.mapper.map(state)
         res = self.actor.predict(state)[0]
         return res
 
