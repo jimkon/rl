@@ -29,7 +29,31 @@ class TestPolicyModel(unittest.TestCase):
                                        })
         temp = adv([1, .5], [1, .5], [1, .5])
         self.assertTrue(temp.shape == (2,), temp.shape)
-        self.assertTrue(((temp - np.array([0, -.25]))<1e-10).all())
+        self.assertTrue(((temp - np.array([0, -.25])) < 1e-10).all())
+
+
+class TestValueModel(unittest.TestCase):
+
+    def setUp(self):
+        self.model = ValueModel(input_dims=2, drop_out=.0)
+
+    def test_value(self):
+        self.assertTrue(self.model.value([0, 1]).shape == (1,), self.model.value([0, 1]).shape)
+        self.assertTrue(self.model.value([[0, 1]]).shape == (1,), self.model.value([[0, 1]]).shape)
+        self.assertTrue(self.model.value([[0, 1], [2, 3], [4, 5]]).shape == (3,), self.model.value([[0, 1], [2, 3], [4, 5]]).shape)
+
+
+class TestPolicyGradientAgent(unittest.TestCase):
+
+    def setUp(self):
+        self.agent = PolicyGradientAgent(state_dims=2, actions_num=3)
+
+    def test_policy(self):
+        self.assertTrue(len(self.agent.policy(np.array([0, 1]))) == 3, len(self.agent.policy(np.array([0, 1]))) == 3)
+
+    def test_act(self):
+        self.assertTrue(not hasattr(self.agent.act(np.array([0, 1])), '__len__'), not hasattr(self.agent.act(np.array([0, 1])), '__len__'))
+
 
 
 if __name__ == '__main__':

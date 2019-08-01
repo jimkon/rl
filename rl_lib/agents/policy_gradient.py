@@ -99,13 +99,7 @@ class ValueModel(rl.nets.FullyConnectedDNN):
         raise NotImplementedError
 
 
-model = PolicyModel(input_dims=2, output_dims=3, drop_out=.0)
-# print(model.policy([[0, 1], [0, 1], [0, 1]], [0, 1, 2]), model.policy([0, 1])[0])
-# print((model.policy([[0, 1], [0, 1], [0, 1]], [0, 1, 2]) - model.policy([0, 1])[0])<1e-10)
-# # print(model.policy([[0, 1], [0, 1]]))
-# # print(model.policy([[0, 1], [0, 1]], [1, 0]))
-# exit()
-class PGAgent(rl.Agent):
+class PolicyGradientAgent(rl.Agent):
 
     def __init__(self, state_dims, actions_num, actor_args=None, critic_args=None, mapper=rl.utils.Mapper, td_update=False):
         super().__init__(state_dims=state_dims, actions_num=actions_num)
@@ -132,8 +126,9 @@ class PGAgent(rl.Agent):
         self.episode = 0
 
     def act(self, state):
+        super().act(state)
         probs = self.policy(state)
-        return np.random.choice(len(probs), 1, p=probs)
+        return np.random.choice(len(probs), 1, p=probs)[0]
 
     def observe(self, state, action, reward, state_, episode=-1, step=-1):
         super().observe(state, action, reward, state_, episode, step)
@@ -156,6 +151,6 @@ class PGAgent(rl.Agent):
             self.episode = episode
 
     def policy(self, state):
-        res = self.actor.predict(state)
+        res = self.actor.predict(state)[0]
         return res
 

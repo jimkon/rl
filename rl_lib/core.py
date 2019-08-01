@@ -3,7 +3,7 @@ import numpy as np
 
 class Agent:
 
-    def __init__(self, state_dims=-1, actions_num=-1):
+    def __init__(self, state_dims, actions_num):
         self.state_dims = state_dims
         self.actions_num = actions_num
 
