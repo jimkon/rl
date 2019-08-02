@@ -152,9 +152,9 @@ class FullyConnectedDNN:
         self.output_shape = tuple([self.output_dims])
 
         layers = np.append(hidden_layers, output_dims).astype(np.int)
-        all_activations = activations.copy()
+        all_activations = activations.copy() if activations is not None else []
         all_activations.append(output_activation)
-        all_use_biases = use_biases.copy()
+        all_use_biases = use_biases.copy() if use_biases is not None else []
         all_use_biases.append(output_use_bias)
 
         print("NN: layers:{}, activations:{}".format(layers, all_activations, all_use_biases))
