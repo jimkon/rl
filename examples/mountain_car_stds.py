@@ -11,6 +11,7 @@ from matplotlib.colors import LogNorm
 plt.style.use("bmh")
 
 
+################### VARIABLES ###################
 class MountainCarRewardWrapper(gym.RewardWrapper):
 
     def __init__(self, env):
@@ -18,8 +19,6 @@ class MountainCarRewardWrapper(gym.RewardWrapper):
         self.state = None
         self.low = self.observation_space.low
         self.high = self.observation_space.high
-        self.center = np.array([-.45, .0])
-        self.normalize_scaler = np.array([1.05, .07])
 
     def reset(self, **kwargs):
         self.state = self.env.reset(**kwargs)
@@ -30,10 +29,28 @@ class MountainCarRewardWrapper(gym.RewardWrapper):
         return self.state, self.reward(reward), done, info
 
     def reward(self, reward):
-        won = self.state[0]>.5
-        res = np.linalg.norm((self.state-self.center)/self.normalize_scaler)
-        res += -1.4142# + (1 if won else .0)
-        return res
+        return reward_function(self.state)
+
+unwrapped_env = gym.make("MountainCar-v0")
+env = MountainCarRewardWrapper(unwrapped_env)
+
+state_low, state_high = np.array(env.observation_space.low, np.float64),\
+                        np.array(env.observation_space.high, np.float64)
+
+state_center = np.array([-.45, .0])
+state_length = np.array([1.05, .07])
+
+actions_num = env.action_space.n
+
+################### FUNCTIONS ###################
+
+def reward_function(state):
+    res = np.linalg.norm((state - state_center) / state_length)
+    res += -1.4142  # + (1 if state[0] > .5 else .0)
+    return res
+
+
+
 
 
 def uniform_state_grid(points_per_axis=31):
@@ -42,7 +59,7 @@ def uniform_state_grid(points_per_axis=31):
     return np.array([np.array([x, y]) for x in s1 for y in s2])
 
 
-def run(agent, episodes=1000, verbose=2):
+def run(agent, episodes=1000, verbose=2, env=env):
     run_start_time = time.time()
     df = pd.DataFrame()
     states, actions, rewards, states_, dones = [], [], [], [], []
@@ -101,6 +118,8 @@ def best_episode(df):
     episode = int(rewards.loc[rewards['reward'].idxmax()]['episode'])
     return episode
 
+def number_of_episodes(df):
+    return df['episode'].max()
 
 def episode_rewards(df):
     return df.groupby(['episode']).agg({'reward' : 'sum'})
@@ -205,7 +224,7 @@ def plot_critic(agent):
     assert hasattr(agent, 'critic')
 
     xys = uniform_state_grid()
-    values = agent.critic.value(xys)
+    values = agent.value(xys)
 
     plot(xys, values)
     plt.colorbar()
@@ -279,10 +298,3 @@ def show_progress(df, agent):
     plt.tight_layout()
     plt.show()
 
-################### VARIABLES ###################
-unwrapped_env = gym.make("MountainCar-v0")
-env = MountainCarRewardWrapper(unwrapped_env)
-
-state_low, state_high = np.array(env.observation_space.low, np.float64),\
-                        np.array(env.observation_space.high, np.float64)
-actions_num = env.action_space.n
