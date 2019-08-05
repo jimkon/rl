@@ -119,7 +119,6 @@ def nn_layer(x, size, activation=tf.nn.relu, drop_out=0.3, use_bias=True, return
     if drop_out:
         x = tf.nn.dropout(x, rate=drop_out)
 
-    print((x.shape[1], size))
     W = tf.Variable(np.random.random((x.shape[1], size)) * (1. / (int(x.shape[1]) * size)))
 
     if use_bias:
@@ -151,7 +150,7 @@ class FullyConnectedDNN:
         self.input_shape = tuple([self.input_dims])
         self.output_shape = tuple([self.output_dims])
 
-        layers = np.append(hidden_layers, output_dims).astype(np.int)
+        layers = np.append(hidden_layers, output_dims).astype(np.int) if hidden_layers is not None else np.array([output_dims])
         all_activations = activations.copy() if activations is not None else []
         all_activations.append(output_activation)
         all_use_biases = use_biases.copy() if use_biases is not None else []

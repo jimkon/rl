@@ -48,6 +48,7 @@ class Mapper:
     def map(self, state):
         return state
 
+
 class StandardMapper(Mapper):
 
     def __init__(self, low, high):

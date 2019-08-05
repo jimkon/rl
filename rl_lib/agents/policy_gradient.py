@@ -29,6 +29,8 @@ class PolicyModel(rl.nets.FullyConnectedDNN):
 
         self.train = tf.compat.v1.train.AdamOptimizer(lr).minimize(self.loss)
 
+        self.sess.run(tf.compat.v1.global_variables_initializer())
+
     def policy(self, states, actions=None):
         states = np.atleast_2d(states)
 
@@ -58,9 +60,30 @@ class PolicyModel(rl.nets.FullyConnectedDNN):
         vs = np.atleast_1d(vs)
 
         size = len(states)
-        assert len(actions) == size
-        assert len(rewards) == size
-        assert len(vs) == size
+        assert len(actions) == size, '{} != {}'.format(len(actions), size)
+        assert len(rewards) == size, '{} != {}'.format(len(rewards), size)
+        assert len(vs) == size, '{} != {}'.format(len(vs), size)
+
+        # print('states', states)
+        # print('actions', actions)
+        # print('pi_s', self.sess.run(self.pi_s, feed_dict={self.x:states}))
+        # print('pi_s_a', self.sess.run(self.pi_s_a, feed_dict={
+        #         self.x: states,
+        #         self.actions: actions
+        #         }))
+        # print('gammas', self.GAMMAS[-size:])
+        # print('rewards', rewards)
+        # print('vs', vs)
+        # print('advantages', self.sess.run(self.advantages, feed_dict={self.gammas: self.GAMMAS[-size:],
+        #                                                               self.rewards: rewards,
+        #                                                               self.vs: vs}))
+        # print('loss', self.sess.run(self.loss, feed_dict={self.x: states,
+        #                                        self.actions: actions,
+        #                                        self.gammas: self.GAMMAS[-size:],
+        #                                        self.rewards: rewards,
+        #                                        self.vs: vs
+        #                                      }))
+
 
         self.sess.run(self.train, feed_dict={self.x: states,
                                              self.actions: actions,
@@ -75,8 +98,8 @@ class PolicyModel(rl.nets.FullyConnectedDNN):
 
 class ValueModel(rl.nets.FullyConnectedDNN):
 
-    def __init__(self, input_dims, gamma=.99, lr=1e-2, **kwargs):
-        super().__init__(input_dims, output_dims=1, output_activation=None, output_use_bias=False, **kwargs)
+    def __init__(self, input_dims, **kwargs):
+        super().__init__(input_dims=input_dims, output_dims=1, **kwargs)
 
     def value(self, states):
         states = np.atleast_2d(states)
@@ -88,10 +111,10 @@ class ValueModel(rl.nets.FullyConnectedDNN):
     def full_episode_update(self, states, rewards):
 
         states = np.atleast_2d(states)
-        rewards = np.atleast_2d(rewards)
+        rewards = np.reshape(rewards, (-1, 1))
 
         size = len(states)
-        assert len(rewards) == size
+        assert len(rewards) == size, '{} != {}'.format(len(rewards), size)
 
         self.fit(states, rewards)
 
@@ -132,22 +155,23 @@ class PolicyGradientAgent(rl.Agent):
 
     def observe(self, state, action, reward, state_, episode=-1, step=-1):
         super().observe(state, action, reward, state_, episode, step)
-        state = self.mapper.map(state)
-        state_ = self.mapper.map(state_)
 
         if self.td_update:
-            self.actor.td_update(state, action, reward)
+            self.actor.td_update(state, action, reward, self.value(state)[0])
             self.critic.td_update(state, reward)
         else:
             if self.episode < episode:
-                self.actor.full_episode_update(self.states, self.actions, self.rewards)
+                self.actor.full_episode_update(self.states,
+                                               self.actions,
+                                               self.rewards,
+                                               self.value(self.states))
                 self.critic.full_episode_update(self.states, self.rewards)
 
                 self.states = []
                 self.actions = []
                 self.rewards = []
 
-            self.states.append(state)
+            self.states.append(state_)
             self.actions.append(action)
             self.rewards.append(reward)
             self.episode = episode
@@ -155,5 +179,10 @@ class PolicyGradientAgent(rl.Agent):
     def policy(self, state):
         state = self.mapper.map(state)
         res = self.actor.predict(state)[0]
+        return res
+
+    def value(self, states):
+        states = np.array([self.mapper.map(state) for state in states])
+        res = self.critic.value(states)
         return res
 
