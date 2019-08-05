@@ -5,7 +5,7 @@ from rl_lib.agents.policy_gradient import *
 class TestPolicyModel(unittest.TestCase):
 
     def setUp(self):
-        self.model = PolicyModel(input_dims=2, output_dims=3, drop_out=.0)
+        self.model = PolicyModel(input_dims=2, output_dims=3, drop_out=.0, gamma=.9)
 
     def test_policy(self):
         self.assertTrue(self.model.policy([0, 1]).shape == (1, 3), self.model.policy([0, 1]).shape)
@@ -27,9 +27,11 @@ class TestPolicyModel(unittest.TestCase):
                                                   self.model.rewards: r,
                                                   self.model.vs: v
                                        })
-        temp = adv([1, .5], [1, .5], [1, .5])
-        self.assertTrue(temp.shape == (2,), temp.shape)
-        self.assertTrue(((temp - np.array([0, -.25])) < 1e-10).all())
+        temp = adv([1, .9, .8, .7, .6, .5, .4, .3, .2, .1],
+                   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   [.5, .5, .5, .5, .5, .5, .5, .5, .5, .5])
+        self.assertTrue(temp.shape == (10,), temp.shape)
+        self.assertTrue(((temp - np.array([.5, .4, .3, .2, .1, 0, -.1, -.2, -.3, -.4])) < 1e-10).all())
 
 
 class TestValueModel(unittest.TestCase):
