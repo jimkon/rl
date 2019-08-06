@@ -114,18 +114,24 @@ class RBFNet:
         return centers, gammas, weights
 
 
-def nn_layer(x, size, activation=tf.nn.relu, drop_out=0.3, return_vars=True):
+def nn_layer(x, size, activation=tf.nn.relu, drop_out=0.3, use_bias=True, return_vars=True):
     # x*W+b
     if drop_out:
         x = tf.nn.dropout(x, rate=drop_out)
 
     W = tf.Variable(np.random.random((x.shape[1], size)) * (1. / (int(x.shape[1]) * size)))
-    b = tf.Variable(np.random.random((1, size)) * (1. / size))
+
+    if use_bias:
+        b = tf.Variable(np.random.random((1, size)) * (1. / size))
+        line = tf.matmul(x, W) + b
+    else:
+        b = None
+        line = tf.matmul(x, W)
 
     if activation is None:
-        y = tf.matmul(x, W) + b
+        y = line
     else:
-        y = activation(tf.matmul(x, W) + b)
+        y = activation(line)
 
     if return_vars:
         return y, W, b
@@ -135,17 +141,22 @@ def nn_layer(x, size, activation=tf.nn.relu, drop_out=0.3, return_vars=True):
 
 class FullyConnectedDNN:
 
-    def __init__(self, input_dims, output_dims, hidden_layers=[200, 100], activations=[tf.nn.relu, tf.nn.relu],
-                 drop_out=.3, lr=1e-2):
+    def __init__(self, input_dims, output_dims, hidden_layers=[200, 100], activations=[tf.nn.relu, tf.nn.relu], use_biases=[True, True],
+                 drop_out=.3, output_activation=None, output_use_bias=False, lr=1e-2):
+
         self.input_dims = input_dims
         self.output_dims = output_dims
 
         self.input_shape = tuple([self.input_dims])
         self.output_shape = tuple([self.output_dims])
 
-        layers = np.append(hidden_layers, output_dims)
-        activations = activations.copy()
-        activations.append(None)
+        layers = np.append(hidden_layers, output_dims).astype(np.int) if hidden_layers is not None else np.array([output_dims])
+        all_activations = activations.copy() if activations is not None else []
+        all_activations.append(output_activation)
+        all_use_biases = use_biases.copy() if use_biases is not None else []
+        all_use_biases.append(output_use_bias)
+
+        print("NN: layers:{}, activations:{}".format(layers, all_activations, all_use_biases))
 
         self.ys, self.Ws, self.bs = [], [], []
 
@@ -153,7 +164,7 @@ class FullyConnectedDNN:
         self.x = tf.compat.v1.placeholder(tf.float64, shape=(None, input_dims))
         x = self.x
         for i, layer in enumerate(layers):
-            y, W, b = nn_layer(x, layer, activations[i], drop_out=drop_out if i > 0 else 0., return_vars=True)
+            y, W, b = nn_layer(x, layer, all_activations[i], drop_out=drop_out if i > 0 else 0., use_bias=all_use_biases[i], return_vars=True)
 
             self.ys.append(y)
             self.Ws.append(W)
@@ -177,18 +188,11 @@ class FullyConnectedDNN:
 
     def predict(self, X):
 
-        assert X.shape == self.input_shape,\
-            'X.shape = {}, it should be {}'.format(X.shape, self.input_shape)
-
-        if len(X.shape) == 1:
-            X = np.reshape(X, (-1, self.input_dims))
+        X = np.atleast_2d(X)
 
         result = self.sess.run(self.y, feed_dict={
                 self.x: X
-        })[0]
-
-        assert result.shape == self.output_shape,\
-            'predict.shape = {}, it should be {}'.format(result.shape, self.output_shape)
+        })
 
         return result
 
@@ -208,4 +212,4 @@ class FullyConnectedDNN:
         })
 
     def partial_fit(self, X, y):
-        self.fit(np.array([X]), np.array([y]))
+        self.fit(np.atleast_2d(X), np.atleast_2d(y))
