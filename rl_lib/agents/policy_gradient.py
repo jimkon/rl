@@ -64,27 +64,6 @@ class PolicyModel(rl.nets.FullyConnectedDNN):
         assert len(rewards) == size, '{} != {}'.format(len(rewards), size)
         assert len(vs) == size, '{} != {}'.format(len(vs), size)
 
-        # print('states', states)
-        # print('actions', actions)
-        # print('pi_s', self.sess.run(self.pi_s, feed_dict={self.x:states}))
-        # print('pi_s_a', self.sess.run(self.pi_s_a, feed_dict={
-        #         self.x: states,
-        #         self.actions: actions
-        #         }))
-        # print('gammas', self.GAMMAS[-size:])
-        # print('rewards', rewards)
-        # print('vs', vs)
-        # print('advantages', self.sess.run(self.advantages, feed_dict={self.gammas: self.GAMMAS[-size:],
-        #                                                               self.rewards: rewards,
-        #                                                               self.vs: vs}))
-        # print('loss', self.sess.run(self.loss, feed_dict={self.x: states,
-        #                                        self.actions: actions,
-        #                                        self.gammas: self.GAMMAS[-size:],
-        #                                        self.rewards: rewards,
-        #                                        self.vs: vs
-        #                                      }))
-
-
         self.sess.run(self.train, feed_dict={self.x: states,
                                              self.actions: actions,
                                              self.gammas: self.GAMMAS[-size:],
