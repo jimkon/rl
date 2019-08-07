@@ -1,4 +1,8 @@
 import numpy as np
+import pandas as pd
+import time
+
+from rl_lib.utils.utils import average_reward
 
 
 class Agent:
@@ -24,42 +28,55 @@ class Agent:
         assert isinstance(state, np.ndarray)
         assert state.shape == self.state_shape
 
-        assert action >= 0 and action < self.actions_num, 'input action {}'.format(action)
+        assert 0 <= action < self.actions_num, 'input action {}'.format(action)
 
         assert isinstance(state_, np.ndarray)
         assert state_.shape == self.state_shape
         pass
 
 
-def run_env(env, episodes, model, verbose=False, reward_wrapper=lambda reward, done, step: reward):
-    ep_rewards = []
-    ep_steps = []
-    for ep in range(episodes):
-        s = env.reset()
+def run(env, agent, episodes=1000, verbose=2):
+    run_start_time = time.time()
+    df = pd.DataFrame()
+    states, actions, rewards, states_, dones = [], [], [], [], []
+
+    for episode in range(episodes):
+        episode_start_time = time.time()
+
+        state = env.reset()
+        episode_reward = 0
+        step_count = 0
         done = False
-        total_reward = .0
-        steps = 0
         while not done:
-            a = model.act(s)
+            action = agent.act(state)
+            state_, reward, done, _ = env.step(action)
 
-            s_, r, done, _ = env.step(a)
+            agent.observe(state, action, reward, state_, episode=episode, step=step_count)
 
-            r = reward_wrapper(r, done, steps)
+            episode_reward += reward
 
-            total_reward += r
+            states.append(state)
+            actions.append(action)
+            rewards.append(reward)
+            states_.append(state_)
+            dones.append(done)
 
-            model.observe(s, a, r, s_, episode=ep, step=steps)
+            state = state_
 
-            s = s_
+            step_count += 1
 
-            steps += 1
+        if verbose >= 2:
+            time_took = 1e3 * (time.time() - episode_start_time)
+            print('Episode {} finished after {} steps with total reward {:.1f} in  {:.1f} ms ({:.2f} per step)'.format(
+                episode, step_count, episode_reward, time_took, time_took / step_count))
 
-        ep_rewards.append(total_reward)
-        ep_steps.append(steps)
-        if verbose:
-            print('Ep {} total reward {} after {} steps'.format(ep, total_reward, steps))
-
-    print(
-        'Run {} episodes, last 100 average {}, last 100 steps {}'.format(len(ep_rewards), np.average(ep_rewards[-100:]),
-                                                                         np.average(ep_steps[-100:])))
-    return ep_rewards, ep_steps
+    df = pd.concat([df, pd.DataFrame(np.array(states), columns=['state1', 'state2'])], axis=1)
+    df = pd.concat([df, pd.DataFrame(np.array(actions), columns=['action'])], axis=1)
+    df = pd.concat([df, pd.DataFrame(np.array(rewards), columns=['reward'])], axis=1)
+    df = pd.concat([df, pd.DataFrame(np.array(states_), columns=['state1_', 'state2_'])], axis=1)
+    df = pd.concat([df, pd.DataFrame(np.array(dones), columns=['dones'])], axis=1)
+    df['episode'] = df['dones'].cumsum() - df['dones']  # number of episode
+    run_time = (time.time() - run_start_time)
+    if verbose >= 1:
+        print("Run {} episodes in {:.02f} seconds. Average reward {}".format(episodes, run_time, average_reward(df)))
+    return df

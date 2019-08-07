@@ -1,6 +1,28 @@
 import numpy as np
 
 
+def best_episode(df):
+    rewards = df.groupby(['episode']).agg({
+                                                  'episode': 'first',
+                                                  'reward': 'sum'
+                                                  })
+    episode = int(rewards.loc[rewards['reward'].idxmax()]['episode'])
+    return episode
+
+
+def number_of_episodes(df):
+    return df['episode'].max()
+
+
+def episode_rewards(df):
+    return df.groupby(['episode']).agg({'reward' : 'sum'})
+
+
+def average_reward(df):
+    rewards = episode_rewards(df)
+    return rewards['reward'].mean()
+
+
 # by LazyProgrammer
 def running_average(arr, frame=-1):
 
@@ -54,10 +76,10 @@ class StandardMapper(Mapper):
     def __init__(self, low, high):
         self.low = np.array(low)
         self.high = np.array(high)
-        self.lenght = self.high-self.low
+        self.length = self.high-self.low
 
     def map(self, state):
-        mapped = (state-self.low)/self.lenght
+        mapped = (state-self.low)/self.length
         return mapped
 
 
