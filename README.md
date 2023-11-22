@@ -1,4 +1,4 @@
-# rl
+# Reinforcement Learning lib
 A toolkit for Reinforcement Learning algorithms with a basic framework for OpenAI Gym environments and a small collection of RL agent implementations, such as:
 ### Q Learning
 Q-Learning is a famous RL algorithm that aims to learn the Q-value (expected cumulative reward of taking a particular action in a specific state and following the optimal policy thereafter) of each state-action of the environment by approximating the Q-function using the observed rewards. With the knowledge of the Q-value, we can then select the actions that lead to the next best state for any given situation and finally maximise the total reward. The approximation of the Q-function can be done in a few different ways. This package contains the following:      
